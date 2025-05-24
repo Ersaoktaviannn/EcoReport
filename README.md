@@ -1,4 +1,4 @@
-# 🌱 EcoReport
+#  EcoReport
 
 **EcoReport** adalah aplikasi web berbasis Flask yang digunakan untuk mencatat, melihat, dan mengelola laporan lingkungan secara digital. Proyek ini bertujuan untuk membantu pengguna dalam memantau data terkait pelaporan lingkungan dengan tampilan yang interaktif dan sistem autentikasi.
 
