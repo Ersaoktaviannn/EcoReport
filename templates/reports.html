@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.title }} - EcoReport{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Report Details -->
+        <div class="card card-custom priority-{{ report.priority }}">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h4 class="mb-0">{{ report.title }}</h4>
+                    <span class="badge 
+                        {% if report.priority == 'critical' %}bg-danger
+                        {% elif report.priority == 'high' %}bg-warning
+                        {% elif report.priority == 'medium' %}bg-info
+                        {% else %}bg-success{% endif %} fs-6">
+                        {{ report.priority.title() }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-tag me-2"></i>Kategori:</strong><br>
+                        <span class="badge bg-secondary fs-6">
+                            {% if report.category.icon %}{{ report.category.icon }}{% endif %} {{ report.category.name }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-info-circle me-2"></i>Status:</strong><br>
+                        <span class="badge status-{{ report.status }} fs-6">
+                            {% if report.status == 'pending' %}
+                                <i class="fas fa-clock me-1"></i>Menunggu Tindakan
+                            {% elif report.status == 'investigating' %}
+                                <i class="fas fa-search me-1"></i>Sedang Investigasi
+                            {% else %}
+                                <i class="fas fa-check-circle me-1"></i>Sudah Selesai
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong><i class="fas fa-map-marker-alt me-2"></i>Lokasi:</strong>
+                    <p class="mb-1">{{ report.location }}</p>
+                    {% if report.latitude and report.longitude %}
+                    <small class="text-muted">
+                        Koordinat: {{ report.latitude }}, {{ report.longitude }}
+                        <a href="https://maps.google.com/?q={{ report.latitude }},{{ report.longitude }}" 
+                           target="_blank" class="btn btn-link btn-sm p-0 ms-2">
+                            <i class="fas fa-external-link-alt"></i> Buka di Google Maps
+                        </a>
+                    </small>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <strong><i class="fas fa-align-left me-2"></i>Deskripsi:</strong>
+                    <div class="mt-2" style="white-space: pre-line;">{{ report.description }}</div>
+                </div>
+                
+                <div class="row text-muted">
+                    <div class="col-md-6">
+                        <small>
+                            <i class="fas fa-user me-1"></i>
+                            Dilaporkan oleh: <strong>{{ report.reporter.full_name }}</strong>
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small>
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ report.created_at.strftime('%d %B %Y, %H:%M') }}
+                        </small>
+                    </div>
+                </div>
+                
+                {% if report.updated_at != report.created_at %}
+                <div class="mt-2 text-muted">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>
+                        Terakhir diupdate: {{ report.updated_at.strftime('%d %B %Y, %H:%M') }}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Comments Section -->
+        <div class="card card-custom mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Komentar & Update</h5>
+            </div>
+            <div class="card-body">
+                {% if current_user.is_authenticated %}
+                <!-- Add Comment Form -->
+                <form method="POST" action="{{ url_for('add_comment', id=report.id) }}" class="mb-4">
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Tambah Komentar</label>
+                        <textarea class="form-control" id="content" name="content" rows="3" 
+                                  placeholder="Berikan update, pertanyaan, atau informasi tambahan..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-paper-plane me-1"></i>Kirim Komentar
+                    </button>
+                </form>
+                <hr>
+                {% endif %}
+                
+                <!-- Comments List -->
+                {% if comments %}
+                    {% for comment in comments %}
+                    <div class="comment mb-3 p-3 
+                        {% if comment.is_official %}bg-light border-start border-primary border-3
+                        {% else %}bg-white border-start border-secondary border-2{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong>
+                                {{ comment.author.full_name }}
+                                {% if comment.is_official %}
+                                    <span class="badge bg-primary ms-2">Official</span>
+                                {% endif %}
+                            </strong>
+                            <small class="text-muted">
+                                {{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            </small>
+                        </div>
+                        <p class="mb-0" style="white-space: pre-line;">{{ comment.content }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-comments fa-2x mb-2"></i>
+                        <p>Belum ada komentar</p>
+                        {% if current_user.is_authenticated %}
+                        <small>Jadilah yang pertama berkomentar!</small>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="card card-custom mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Admin Actions</h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_report_status', id=report.id) }}">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Update Status</label>
+                        <select class="form-select" name="status" id="status">
+                            <option value="pending" {% if report.status == 'pending' %}selected{% endif %}>Menunggu</option>
+                            <option value="investigating" {% if report.status == 'investigating' %}selected{% endif %}>Investigasi</option>
+                            <option value="resolved" {% if report.status == 'resolved' %}selected{% endif %}>Selesai</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        <i class="fas fa-save me-1"></i>Update Status
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Report Info -->
+        <div class="card card-custom mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informasi Laporan</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>ID Laporan:</strong><br>
+                    <code>#{{ report.id }}</code>
+                </div>
+                <div class="mb-2">
+                    <strong>Kategori:</strong><br>
+                    {{ report.category.name }}
+                </div>
+                <div class="mb-2">
+                    <strong>Level Prioritas:</strong><br>
+                    <span class="badge 
+                        {% if report.priority == 'critical' %}bg-danger
+                        {% elif report.priority == 'high' %}bg-warning
+                        {% elif report.priority == 'medium' %}bg-info
+                        {% else %}bg-success{% endif %}">
+                        {{ report.priority.title() }}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Total Komentar:</strong><br>
+                    {{ comments|length }} komentar
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="card card-custom">
+            <div class="card-body">
+                <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary w-100 mb-2">
+                    <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar
+                </a>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('new_report') }}" class="btn btn-primary-custom w-100">
+                    <i class="fas fa-plus me-2"></i>Buat Laporan Baru
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

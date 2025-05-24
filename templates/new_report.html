@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Buat Laporan Baru - EcoReport{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card card-custom">
+            <div class="card-header bg-warning text-dark text-center">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Buat Laporan Lingkungan</h4>
+                <p class="mb-0 mt-2">Laporkan isu lingkungan yang Anda temukan</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" id="reportForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">Judul Laporan *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Contoh: Pencemaran Sungai di Jalan Sudirman" required>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="priority" class="form-label">Prioritas *</label>
+                            <select class="form-select" id="priority" name="priority" required>
+                                <option value="">Pilih Prioritas</option>
+                                <option value="low">Rendah</option>
+                                <option value="medium" selected>Sedang</option>
+                                <option value="high">Tinggi</option>
+                                <option value="critical">Kritis</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category_id" class="form-label">Kategori *</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">Pilih Kategori</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">
+                                    {% if category.icon %}{{ category.icon }}{% endif %} {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Lokasi *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       placeholder="Alamat lengkap lokasi kejadian" required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="getCurrentLocation()">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="latitude" class="form-label">Latitude (Opsional)</label>
+                            <input type="number" step="any" class="form-control" id="latitude" name="latitude" 
+                                   placeholder="-6.2088">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="longitude" class="form-label">Longitude (Opsional)</label>
+                            <input type="number" step="any" class="form-control" id="longitude" name="longitude" 
+                                   placeholder="106.8456">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Deskripsi Lengkap *</label>
+                        <textarea class="form-control" id="description" name="description" rows="6" 
+                                  placeholder="Jelaskan secara detail isu lingkungan yang Anda temukan:
+• Apa yang terjadi?
+• Kapan ditemukan?
+• Seberapa parah kondisinya?
+• Dampak yang sudah terlihat
+• Dugaan penyebab" required></textarea>
+                        <div class="form-text">Semakin detail laporan Anda, semakin cepat penanganannya</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Tips Laporan Berkualitas:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Sertakan foto jika memungkinkan (fitur akan ditambahkan)</li>
+                            <li>Berikan koordinat lokasi yang akurat</li>
+                            <li>Jelaskan dampak yang sudah terlihat</li>
+                            <li>Sebutkan jika ada korban atau kerusakan</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary-custom btn-lg me-3">
+                            <i class="fas fa-paper-plane me-2"></i>Kirim Laporan
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Batal
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Modal (Optional) -->
+<div class="modal fade" id="mapModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pilih Lokasi di Peta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="height: 400px; background: #f0f0f0; border-radius: 10px;">
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <p class="text-muted">Integrasi peta akan ditambahkan di versi selanjutnya</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary">Pilih Lokasi</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                
+                // Reset button
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>Lokasi berhasil didapatkan!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.getElementById('reportForm').insertBefore(alert, document.getElementById('reportForm').firstChild);
+                
+                // Auto hide after 3 seconds
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 3000);
+            },
+            function(error) {
+                // Reset button
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+                
+                let message = 'Gagal mendapatkan lokasi. ';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message += 'Akses lokasi ditolak.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message += 'Informasi lokasi tidak tersedia.';
+                        break;
+                    case error.TIMEOUT:
+                        message += 'Permintaan lokasi timeout.';
+                        break;
+                    default:
+                        message += 'Terjadi kesalahan yang tidak diketahui.';
+                        break;
+                }
+                
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.getElementById('reportForm').insertBefore(alert, document.getElementById('reportForm').firstChild);
+            }
+        );
+    } else {
+        alert('Geolocation tidak didukung oleh browser ini.');
+    }
+}
+
+// Form validation
+document.getElementById('reportForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    
+    if (title.length < 10) {
+        e.preventDefault();
+        alert('Judul laporan minimal 10 karakter');
+        return;
+    }
+    
+    if (description.length < 50) {
+        e.preventDefault();
+        alert('Deskripsi laporan minimal 50 karakter');
+        return;
+    }
+});
+
+// Character counter for description
+document.getElementById('description').addEventListener('input', function() {
+    const current = this.value.length;
+    const min = 50;
+    
+    let helpText = this.nextElementSibling;
+    if (current < min) {
+        helpText.innerHTML = `Semakin detail laporan Anda, semakin cepat penanganannya (${current}/${min} karakter minimum)`;
+        helpText.className = 'form-text text-warning';
+    } else {
+        helpText.innerHTML = `Semakin detail laporan Anda, semakin cepat penanganannya (${current} karakter)`;
+        helpText.className = 'form-text text-success';
+    }
+});
+</script>
+{% endblock %}

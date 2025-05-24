@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EcoReport{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="display-4 text-center mb-4">
+            <i class="fas fa-leaf text-success"></i>
+            Dashboard Lingkungan
+        </h1>
+        <p class="text-center text-muted mb-5">Pantau dan laporkan isu lingkungan di sekitar Anda</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-5">
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                <h2 class="stats-number">{{ total_reports }}</h2>
+                <p class="mb-0">Total Laporan</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-3x mb-3"></i>
+                <h2 class="stats-number">{{ pending_reports }}</h2>
+                <p class="mb-0">Menunggu</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card-body text-center">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <h2 class="stats-number">{{ total_reports - pending_reports - resolved_reports }}</h2>
+                <p class="mb-0">Investigasi</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h2 class="stats-number">{{ resolved_reports }}</h2>
+                <p class="mb-0">Selesai</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-5">
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Laporan per Kategori</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Status Laporan</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-custom">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Laporan Terbaru</h5>
+                <a href="{{ url_for('reports') }}" class="btn btn-light btn-sm">
+                    Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_reports %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Judul</th>
+                                    <th>Kategori</th>
+                                    <th>Lokasi</th>
+                                    <th>Status</th>
+                                    <th>Prioritas</th>
+                                    <th>Tanggal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in recent_reports %}
+                                <tr class="priority-{{ report.priority }}">
+                                    <td>{{ report.title[:50] }}{% if report.title|length > 50 %}...{% endif %}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ report.category.icon }} {{ report.category.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ report.location }}</td>
+                                    <td>
+                                        <span class="badge status-{{ report.status }}">
+                                            {{ report.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if report.priority == 'critical' %}bg-danger
+                                            {% elif report.priority == 'high' %}bg-warning
+                                            {% elif report.priority == 'medium' %}bg-info
+                                            {% else %}bg-success{% endif %}">
+                                            {{ report.priority.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ report.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_report', id=report.id) }}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>Belum ada laporan</p>
+                        {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('new_report') }}" class="btn btn-primary-custom">
+                                <i class="fas fa-plus me-2"></i>Buat Laporan Pertama
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+{% if not current_user.is_authenticated %}
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card card-custom bg-light">
+            <div class="card-body text-center py-5">
+                <h3>Bergabung dalam Gerakan Lingkungan!</h3>
+                <p class="lead">Daftarkan diri Anda untuk melaporkan isu lingkungan di sekitar.</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary-custom btn-lg me-3">
+                    <i class="fas fa-user-plus me-2"></i>Daftar Sekarang
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Data dari backend (dengan fallback)
+const categoryData = [
+    {% if category_stats %}
+        {% for stat in category_stats %}
+        {name: "{{ stat.name }}", count: {{ stat.count }}},
+        {% endfor %}
+    {% else %}
+        {name: "Pencemaran Air", count: 2},
+        {name: "Pencemaran Udara", count: 1},
+        {name: "Sampah Ilegal", count: 3},
+        {name: "Kerusakan Hutan", count: 1},
+        {name: "Pencemaran Suara", count: 1}
+    {% endif %}
+];
+
+// Chart untuk kategori
+const categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.map(item => item.name),
+        datasets: [{
+            data: categoryData.map(item => item.count),
+            backgroundColor: [
+                '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Data status dari template
+const statusData = {
+    pending: {{ pending_reports|default(0) }},
+    investigating: {{ (total_reports|default(0)) - (pending_reports|default(0)) - (resolved_reports|default(0)) }},
+    resolved: {{ resolved_reports|default(0) }}
+};
+
+// Chart untuk status
+const statusChart = new Chart(document.getElementById('statusChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Pending', 'Investigating', 'Resolved'],
+        datasets: [{
+            label: 'Jumlah Laporan',
+            data: [statusData.pending, statusData.investigating, statusData.resolved],
+            backgroundColor: ['#f093fb', '#4facfe', '#43e97b'],
+            borderRadius: 10,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Coba ambil data dari API stats yang sudah ada
+fetch('/api/stats/summary')
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error('API not available');
+    })
+    .then(data => {
+        console.log('API data loaded:', data);
+        
+        // Update chart kategori jika ada data
+        if (data.by_category) {
+            const newCategoryData = data.by_category.map(cat => ({
+                name: cat.name,
+                count: cat.count
+            }));
+            
+            categoryChart.data.labels = newCategoryData.map(item => item.name);
+            categoryChart.data.datasets[0].data = newCategoryData.map(item => item.count);
+            categoryChart.update();
+        }
+        
+        // Update chart status jika ada data
+        if (data.by_status) {
+            statusChart.data.datasets[0].data = [
+                data.by_status.pending || 0,
+                data.by_status.investigating || 0, 
+                data.by_status.resolved || 0
+            ];
+            statusChart.update();
+        }
+    })
+    .catch(error => {
+        console.log('Using template data for charts:', error.message);
+        // Chart sudah diinisialisasi dengan data template di atas
+    });
+</script>
+{% endblock %}
