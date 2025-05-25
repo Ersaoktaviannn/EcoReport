@@ -2,7 +2,7 @@
 
 **EcoReport** adalah aplikasi web berbasis Flask yang digunakan untuk mencatat, melihat, dan mengelola laporan lingkungan secara digital. Proyek ini bertujuan untuk membantu pengguna dalam memantau data terkait pelaporan lingkungan dengan tampilan yang interaktif dan sistem autentikasi.
 
-## 🔧 Teknologi yang Digunakan
+## Tech Stack
 
 - **Python 3.10**
 - **Flask** – Web framework
@@ -12,7 +12,7 @@
 - **Bootstrap** – Styling (jika digunakan)
 - **Werkzeug** – Routing dan keamanan
 
-## ▶️ Cara Menjalankan Aplikasi
+## Run n Config
 1. Clone repository
 ```plaintext
 git clone https://github.com/username/EcoReport.git
