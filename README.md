@@ -41,11 +41,3 @@ python run_tests.py
 ```plaintext
 python app.py
 ```
-Aplikasi akan berjalan di: http://localhost:5000
-
-----
-
-📌 Catatan
-Pastikan file .env tersedia jika kamu menggunakan variabel environment.
-
-File .db (SQLite) tidak disertakan — buatlah database saat pertama kali aplikasi dijalankan.
